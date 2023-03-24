@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native";
 import AddTodo from "../components/AddTodo";
 import TodosList from "../components/TodosList";
 import { COLORS, FONT, SIZES } from "../constants/theme";
+import useFetch from "../hook/useFetch";
 
 const App = () => {
-  const [todos, setTodos] = useState([]);
+  const { data, setData, isLoading, error } = useFetch();
   const [todoText, setTodoText] = useState("");
 
   return (
@@ -25,12 +26,17 @@ const App = () => {
           headerTitleAlign: "center",
         }}
       />
-      <TodosList todos={todos} setTodos={setTodos} />
+      <TodosList
+        todos={data}
+        setTodos={setData}
+        isLoading={isLoading}
+        error={error}
+      />
       <AddTodo
         todoText={todoText}
         setTodoText={setTodoText}
-        todos={todos}
-        setTodos={setTodos}
+        todos={data}
+        setTodos={setData}
       />
     </SafeAreaView>
   );

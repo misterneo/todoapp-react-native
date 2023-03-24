@@ -1,11 +1,23 @@
-import React from "react";
-import { FlatList, Text, View } from "react-native";
-import { SIZES } from "../constants/theme";
+import React, { useState } from "react";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { COLORS, SIZES } from "../constants/theme";
 import TodoItem from "./TodoItem";
 import { styles } from "../styles/TodosList.style";
+import { _delete, _update } from "../api";
 
-const TodosList = ({ todos, setTodos }) => {
-  return todos.length === 0 ? (
+const TodosList = ({ todos, setTodos, isLoading, error }) => {
+  const [isUpdating, setIsUpdating] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null);
+
+  return isLoading ? (
+    <View style={styles.noTodos}>
+      <ActivityIndicator size={"large"} color={COLORS.primary} />
+    </View>
+  ) : error ? (
+    <View style={styles.noTodos}>
+      <Text>Somthing went wrong! {error.toString()}</Text>
+    </View>
+  ) : todos.length === 0 ? (
     <View style={styles.noTodos}>
       <Text>You still haven't added any todos!</Text>
     </View>
@@ -19,18 +31,45 @@ const TodosList = ({ todos, setTodos }) => {
         renderItem={({ item }) => (
           <TodoItem
             todo={item}
-            onUpdate={(id) => {
-              setTodos(
-                todos.map((todo) => {
-                  if (todo.id === id) {
-                    return { ...todo, status: !todo.status };
-                  }
-                  return todo;
-                })
-              );
+            isUpdating={isUpdating}
+            isDeleting={isDeleting}
+            onUpdate={async (id) => {
+              setIsUpdating(id);
+              try {
+                const todo = todos.find((t) => t.id === id);
+                const response = await _update(id, {
+                  status: !todo.status,
+                });
+
+                if (response.data.status == 200) {
+                  setTodos(
+                    todos.map((todo) => {
+                      if (todo.id === id) {
+                        return { ...todo, status: !todo.status };
+                      }
+                      return todo;
+                    })
+                  );
+                }
+              } catch (e) {
+                console.log(e);
+              }
+
+              setIsUpdating(null);
             }}
-            onDelete={(id) => {
-              setTodos(todos.filter((todo) => todo.id !== id));
+            onDelete={async (id) => {
+              setIsDeleting(id);
+              try {
+                const response = await _delete(id);
+
+                if (response.data.status == 200) {
+                  setTodos(todos.filter((todo) => todo.id !== id));
+                }
+              } catch (e) {
+                console.log(e);
+              }
+
+              setIsDeleting(null);
             }}
           />
         )}

@@ -1,8 +1,39 @@
-import React from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { _create } from "../api";
+import { COLORS } from "../constants/theme";
 import { styles } from "../styles/AddTodo.style";
 
 const AddTodo = ({ todoText, setTodoText, todos, setTodos }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onSubmit = async () => {
+    setIsLoading(true);
+    if (todoText) {
+      try {
+        const response = await _create({
+          text: todoText,
+          status: 0,
+        });
+
+        if (response.data.status == 201) {
+          const todo = response.data.data;
+          setTodos([todo, ...todos]);
+          setTodoText("");
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    setIsLoading(false);
+  };
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -12,23 +43,12 @@ const AddTodo = ({ todoText, setTodoText, todos, setTodos }) => {
         value={todoText}
         style={styles.textInput}
       />
-      <TouchableOpacity
-        onPress={() => {
-          if (todoText) {
-            setTodos([
-              {
-                id: Math.floor(Math.random() * 100000000),
-                text: todoText,
-                status: false,
-              },
-              ...todos,
-            ]);
-            setTodoText("");
-          }
-        }}
-        style={styles.addButton}
-      >
-        <Text style={styles.addButtonText}>Add</Text>
+      <TouchableOpacity onPress={onSubmit} style={styles.addButton}>
+        {isLoading ? (
+          <ActivityIndicator size={"small"} color={COLORS.white} />
+        ) : (
+          <Text style={styles.addButtonText}>Add</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
