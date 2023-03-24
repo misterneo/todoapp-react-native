@@ -7,7 +7,7 @@ This guide will walk you through the process of cloning and running a React Nati
 Before you can clone and run a React Native app using Expo, you'll need to install the following tools:
 
 - Node.js
-- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/) (optional)
 - Git
 
 ## Cloning the Repo
@@ -32,6 +32,12 @@ cd todoapp-react-native
 
 ```sh
 npm install
+```
+
+- Start the app using NPM:
+
+```sh
+npm start
 ```
 
 - Start the app using Expo:
