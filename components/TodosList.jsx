@@ -41,7 +41,7 @@ const TodosList = ({ todos, setTodos, isLoading, error }) => {
                   status: !todo.status,
                 });
 
-                if (response.data.status == 200) {
+                if (response.status == 204) {
                   setTodos(
                     todos.map((todo) => {
                       if (todo.id === id) {
