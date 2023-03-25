@@ -1,56 +1,169 @@
 # A Todo App using React Native
 
-This guide will walk you through the process of cloning and running a React Native app using Expo. Expo is a popular tool for developing and deploying React Native apps, and it provides a set of tools and services that make it easier to create and manage your project.
+## Connecting the App to a local Laravel API
+
+If you've made it this far, then you have successfully set up and run the project. Now, let's move on to creating a simple todo app Laravel API so that we can connect it to this React Native app using Axios.
+
+In this guide, I will provide a step-by-step process for building a basic todo app API using Laravel. So, let's get started!
 
 ## Prerequisites
 
-Before you can clone and run a React Native app using Expo, you'll need to install the following tools:
+Before you start, you'll need to install the following tools:
 
-- Node.js
-- [Expo CLI](https://docs.expo.dev/get-started/installation/)
-- Git
+- Laravel 10
+- Mysql
 
-## Cloning the Repo
+## Creating a new laravel project
 
-- Open your terminal or command prompt.
-- Navigate to the directory where you want to clone the repo.
-- Run the following command to clone the repo:
+To connect this app with a backend server, you need to create a new Laravel 10 project using the following command:
 
-```sh
-git clone https://github.com/misterneo/todoapp-react-native.git
+```zsh
+laravel new todo-app-laravel-api
 ```
 
-## 🚀 Running the App
+- After creating the project, run the following command to generate a new Model, Migration, and Resource Controller:
 
-- Navigate into the project directory using the cd command:
-
-```sh
-cd todoapp-react-native
+```zsh
+php artisan make:model Todo -m -c --resource
 ```
 
-- Install the required dependencies:
+- Open the migration and add the following code:
 
-```sh
-npm install
+```php
+public function up(): void
+{
+    Schema::create('todos', function (Blueprint $table) {
+        $table->id();
+        $table->text('text'); // Add this
+        $table->boolean('status')->default(false); // Add this
+        $table->timestamps();
+    });
+}
 ```
 
-- Start the app using Expo:
+- After updating the migration, run the migration: `php artisan migrate`.
+- Next, navigate to the `routes/api.php` file and add the following resource route:
 
-```sh
-expo start
+```php
+Route::resource('todos', TodoController::class);
 ```
 
-- Expo will start the development server and open a web page in your default browser with a QR code. This QR code is used to open the app on your phone.
+- Now, implement the logic to handle the requests sent to those endpoints. The code below handles all the necessary requests and their corresponding responses to successfully communicate with the frontend React Native application:
 
-- To view the app on your phone, install the Expo Go app from the App Store or Google Play.
+```php
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        try {
+            $todos = Todo::orderBy('created_at', 'desc')->get(["id", "text", "status"]);
 
-- Once installed, open the Expo Go app and scan the QR code displayed in your browser.
+            return response()->json([
+                'status' => 200,
+                'data' => $todos
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'An error occurred while fetching todos: ' . $th->getMessage()
+            ]);
+        }
+    }
 
-- The app will be downloaded and installed on your phone, and you can start using it.
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        try {
+            $validatedData =  $request->validate([
+                'text' => 'string|max:255|required',
+                'status' => 'boolean|nullable'
+            ]);
 
-## Conclusion
+            $todo = Todo::create(
+                $validatedData
+            );
 
-Cloning and running a React Native app using Expo is a straightforward process. By following the steps outlined in this guide, you should be able to get up and running quickly. If you run into any issues, consult the Expo documentation or reach out to the project maintainers for assistance.
+            return response()->json([
+                'status' => 201,
+                'data' => $todo
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'Validation error: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'An error occurred while creating todo: ' . $th->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Todo $todo)
+    {
+        return response()->json([
+            'status' => 200,
+            'data' => $todo
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Todo $todo)
+    {
+        try {
+            $request->validate([
+                'status' => 'boolean|required'
+            ]);
+            $todo->update($request->only('status'));
+            return response()->noContent();
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 422,
+                'message' => 'Validation error: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'An error occurred while updating todo: ' . $th->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Todo $todo)
+    {
+        try {
+            $todo->delete();
+
+            return response()->json([
+                'status' => 200,
+                "message" => "Todo Deleted"
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'An error occurred while deleting todo: ' . $th->getMessage()
+            ]);
+        }
+    }
+```
+
+Now all you need to do is run `php artisan serve`, and the API is ready for the application to use. Please note that if you're using an external device, you need to expose the application to your local network. To do so, run this command instead: `php artisan serve --host 0.0.0.0`. Also, go to the `api/index` file in the frontend application and update the base URL endpoint with your machine's internal IP address.
+
+With these steps, you have successfully connected a React Native application to a Laravel API.
 
 ## Contributing
 
